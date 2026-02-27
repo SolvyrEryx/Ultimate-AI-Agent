@@ -1,0 +1,175 @@
+{
+  "name": "🤖Research Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-240, -80],
+      "id": "research-trigger-001",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [-140, 140],
+      "id": "research-llm-001",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "iEsH2oywXIJiWHnM",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "# Overview\nYou are a Research Agent. Your job is to conduct thorough, intelligent research on any topic the user asks about. You do NOT just copy search results — you synthesize, analyze, and present information in a clear and useful way.\n\n## Research Process\n1. Identify the core question or topic\n2. Search for it using the Tavily tool (run 2–3 searches with different angles)\n3. Review all results carefully\n4. Synthesize the information\n5. Present a comprehensive, well-structured research report\n\n## Search Strategy\n- Run your first search with the main topic\n- Run a second search for recent news or updates on the topic\n- If comparing options, run a search for each option\n- If you find conflicting information, note it explicitly\n\n## Output Format\nAlways structure your response like this:\n\n**Research Report: [Topic]**\n\n📌 **Summary**\n[2–3 sentence overview of the key finding or answer]\n\n📊 **Key Facts**\n[Bullet points of the most important facts, data points, or findings]\n\n💡 **Key Insights**\n[What this means, why it matters, important patterns or trends]\n\n🔗 **Sources & Links**\n[List any relevant URLs from the search results]\n\n⚠️ **Caveats**\n[Any limitations, things that are uncertain, or areas needing further research]\n\n## Tone\n- Clear and professional\n- Objective — present multiple sides if relevant\n- Concise but thorough — don't pad, but don't omit important details\n- Feel like a knowledgeable analyst, not a search engine\n\n## Important Rules\n- Always run at least 2 searches before writing the report\n- Never make up facts — only use what you find\n- If you cannot find reliable information, say so clearly\n- For comparisons, be balanced and fair to all options"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [-20, -80],
+      "id": "research-agent-001",
+      "name": "Research Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool to search the internet for research. Run multiple searches with different queries to gather comprehensive information.",
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n    \"api_key\": \"your-api-key\",\n    \"query\": \"{searchTerm}\",\n    \"search_depth\": \"advanced\",\n    \"include_answer\": true,\n    \"include_raw_content\": true,\n    \"max_results\": 5\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "searchTerm",
+              "description": "The search query to research. Be specific. Run multiple searches on different aspects of the topic.",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [240, 180],
+      "id": "research-tavily-001",
+      "name": "Tavily Research Search"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "research-resp-001",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [500, -160],
+      "id": "research-success-001",
+      "name": "Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "research-err-001",
+              "name": "response",
+              "value": "An error occurred during research. Please try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [500, 20],
+      "id": "research-error-001",
+      "name": "Try Again"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Research Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Research Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily Research Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Research Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Agent": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "research-v1-2024",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "95e5a8c2e51c83e33b232ea792bbe3f063c094c33d9806a5565cb31759e1ad39"
+  },
+  "id": "RSRCH123456789AB",
+  "tags": []
+}

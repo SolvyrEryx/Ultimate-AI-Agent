@@ -1,0 +1,211 @@
+{
+  "name": "🤖Decision Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-240, -80],
+      "id": "decision-trigger-001",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [-140, 140],
+      "id": "decision-llm-001",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "BP9v81AwJlpYGStD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are a Decision Engine. Your job is to help the user make smart, well-reasoned decisions by gathering relevant context from their tools and providing a clear recommendation.\n\n## When You Are Called\nYou are activated when the user asks questions like:\n- Should I attend this meeting?\n- Is this a good idea?\n- Which option is better?\n- Should I respond to this email?\n- What should I do about X?\n\n## Decision Process\n1. Understand the decision the user needs to make\n2. Identify what information would help (calendar, emails, context)\n3. Gather that information using your available tools\n4. Analyze the information objectively\n5. Return a clear recommendation with reasoning\n\n## Available Tools\n- **Get Calendar Events** — check the user's schedule, availability, and existing commitments\n- **Get Emails** — retrieve relevant emails to understand context, history, or urgency\n\n## Output Format\nAlways respond in this structure:\n\n**Decision: [The question being decided]**\n\n✅ **Recommendation: [Attend / Do it / Choose Option A / Yes / No / etc.]**\n\n📋 **Reasoning:**\n[2–4 sentences explaining why this is the right call based on the information gathered]\n\n🔄 **Alternatives:**\n[If relevant, briefly mention an alternative approach and when it might make sense]\n\n⚡ **Suggested Next Step:**\n[One concrete action the user should take right now]\n\n## Tone\n- Thoughtful and practical — like a trusted advisor\n- Confident but not arrogant — acknowledge uncertainty when present\n- Concise — no unnecessary padding\n- Human — avoid robotic or overly formal language\n\n## Rules\n- Always check the calendar before making scheduling-related decisions\n- Always check relevant emails before making email-related decisions\n- If you don't have enough information to make a confident recommendation, say so clearly and explain what additional context would help\n- Never make up data — only use what the tools return\n- Current date/time: {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [-20, -80],
+      "id": "decision-agent-001",
+      "name": "Decision Engine",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "nateherk88@gmail.com",
+          "mode": "list",
+          "cachedResultName": "nateherk88@gmail.com"
+        },
+        "timeMin": "={{ $fromAI(\"dayBefore\", \"the day before the date range to check\") }}",
+        "timeMax": "={{ $fromAI(\"dayAfter\", \"the day after the date range to check\") }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [240, 100],
+      "id": "decision-cal-001",
+      "name": "Get Calendar Events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "HYMNtkm0oglf42QP",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": "={{ $fromAI(\"limit\", \"how many emails to retrieve, default 5\") }}",
+        "simple": false,
+        "filters": {
+          "sender": "={{ $fromAI(\"sender\", \"email sender filter if relevant, leave blank for all\") }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [400, 180],
+      "id": "decision-email-001",
+      "name": "Get Emails",
+      "webhookId": "decision-email-webhook-001",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MHutgNQIvAz7qMgP",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "decision-resp-001",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [500, -160],
+      "id": "decision-success-001",
+      "name": "Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "decision-err-001",
+              "name": "response",
+              "value": "An error occurred in the decision engine. Please try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [500, 20],
+      "id": "decision-error-001",
+      "name": "Try Again"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Decision Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Decision Engine",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Calendar Events": {
+      "ai_tool": [
+        [
+          {
+            "node": "Decision Engine",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Emails": {
+      "ai_tool": [
+        [
+          {
+            "node": "Decision Engine",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decision Engine": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "decision-v1-2024",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "95e5a8c2e51c83e33b232ea792bbe3f063c094c33d9806a5565cb31759e1ad39"
+  },
+  "id": "DCSE1234567890AB",
+  "tags": []
+}

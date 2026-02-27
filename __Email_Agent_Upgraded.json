@@ -1,0 +1,363 @@
+{
+  "name": "🤖Email Agent (Upgraded)",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [800, 400],
+      "id": "email-trigger-001",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [560, 680],
+      "id": "email-llm-001",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "BP9v81AwJlpYGStD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are an intelligent email management assistant. All emails you send or draft must be formatted professionally in HTML and signed off as \"Nate.\"\n\n## Core Email Tools\n- Use **Send Email** to send emails.\n- Use **Create Draft** if the user asks for a draft.\n- Use **Get Emails** to retrieve emails when requested.\n- Use **Get Labels** to retrieve labels.\n- Use **Mark Unread** to mark an email as unread. You must use Get Emails first to get the message ID.\n- Use **Label Email** to flag an email. You must use Get Emails first for the message ID, then Get Labels for the label ID.\n- Use **Email Reply** to reply to an email. You must use Get Emails first for the message ID.\n\n## Smart Email Intelligence Capabilities\n\n### 1. Email Classification\nWhenever you retrieve emails, automatically classify each one into a priority tier:\n- 🔴 **Urgent** — requires action today (deadlines, time-sensitive requests, direct asks from important people)\n- 🟡 **Important** — requires action soon but not immediately (follow-ups, project updates, responses needed)\n- 🟢 **Normal** — informational, non-urgent replies, updates\n- ⚪ **Low Priority** — newsletters, promotions, automated notifications\n\nAlways show the priority label next to the email subject when listing emails.\n\n### 2. Inbox Summary\nWhen the user asks to check or summarize their inbox, always produce a structured summary:\n\n**📬 Inbox Summary**\n🔴 Urgent: [X emails]\n🟡 Important: [X emails]\n🟢 Normal: [X emails]\n⚪ Low Priority: [X emails]\n\n**⚡ Highlights:**\n- [Key email 1 — who it's from and what it's about]\n- [Key email 2 — who it's from and what it's about]\n- [Key email 3 — who it's from and what it's about]\n\n### 3. Reply Suggestions\nWhen an email clearly requires a response, automatically prepare a draft reply and present it to the user like this:\n\n**💬 Suggested Reply to [Sender Name]:**\n---\n[Draft reply in HTML]\n---\nReply options: **[Send as-is]** | **[Edit before sending]** | **[Skip]**\n\nAlways suggest a reply when:\n- Someone asked a direct question\n- Someone sent an invitation or request that needs confirmation\n- The email ends with an expected response\n\n### 4. Follow-up Detection\nWhen retrieving emails, scan for situations where a response may be overdue:\n- If someone asked a question and there's no reply thread\n- If someone sent a message 3+ days ago without getting a response\n- If the email contains phrases like \"please confirm\", \"let me know\", \"waiting to hear back\"\n\nWhen detected, flag it clearly:\n**⏰ Follow-up needed:** [Sender] sent a message [X days ago] that may need a reply.\n\n## Final Notes\n- Current date/time: {{ $now }}\n- Always be helpful and proactive — don't just execute, also inform.\n- When classifying emails, use your judgment based on content, sender, and urgency signals."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [1040, 400],
+      "id": "email-agent-001",
+      "name": "Email Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI(\"emailAddress\") }}",
+        "subject": "={{ $fromAI(\"subject\") }}",
+        "message": "={{ $fromAI(\"emailBody\") }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [720, 760],
+      "id": "email-send-001",
+      "name": "Send Email",
+      "webhookId": "86c8c4b1-13bb-4ebe-acb9-30e1d7082d55",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MHutgNQIvAz7qMgP",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": "={{ $fromAI(\"limit\", \"how many emails the user wants\") }}",
+        "simple": false,
+        "filters": {
+          "sender": "={{ $fromAI(\"sender\", \"who the emails are from\") }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [1360, 860],
+      "id": "email-get-001",
+      "name": "Get Emails",
+      "webhookId": "af4b3298-9037-44b0-aa12-2acbfbb5e66f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MHutgNQIvAz7qMgP",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $fromAI(\"subject\") }}",
+        "emailType": "html",
+        "message": "={{ $fromAI(\"emailBody\") }}",
+        "options": {
+          "sendTo": "={{ $fromAI(\"emailAddress\") }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [1200, 880],
+      "id": "email-draft-001",
+      "name": "Create Draft",
+      "webhookId": "17016bce-d7d7-428a-a56c-f6ea122db8be",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MHutgNQIvAz7qMgP",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $fromAI(\"ID\", \"the message ID\") }}",
+        "message": "={{ $fromAI(\"emailBody\") }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [880, 820],
+      "id": "email-reply-001",
+      "name": "Email Reply",
+      "webhookId": "114785e6-a859-432b-81b4-c490c1c35b1c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MHutgNQIvAz7qMgP",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [1480, 800],
+      "id": "email-labels-001",
+      "name": "Get Labels",
+      "webhookId": "9e08b59e-792d-4566-83f1-9263c9ad86ae",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MHutgNQIvAz7qMgP",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $fromAI(\"ID\", \"the ID of the message\") }}",
+        "labelIds": "={{ $fromAI(\"labelID\") }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [1040, 860],
+      "id": "email-labeladd-001",
+      "name": "Label Emails",
+      "webhookId": "0e951529-2e6d-40bf-ac40-fc0947e242e2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MHutgNQIvAz7qMgP",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsUnread",
+        "messageId": "={{ $fromAI(\"messageID\") }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [1620, 740],
+      "id": "email-unread-001",
+      "name": "Mark Unread",
+      "webhookId": "a35af9d8-f67d-4ff9-803f-59ec6356e795",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MHutgNQIvAz7qMgP",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "email-resp-001",
+              "name": "=response",
+              "value": "={{$json.output}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1640, 320],
+      "id": "email-success-001",
+      "name": "Success"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "email-err-001",
+              "name": "response",
+              "value": "Unable to perform task. Please try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1640, 500],
+      "id": "email-error-001",
+      "name": "Try Again"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Agent": {
+      "main": [
+        [
+          {
+            "node": "Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Reply": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Emails": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Draft": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Labels": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label Emails": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Unread": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "email-upgraded-v1-2024",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "95e5a8c2e51c83e33b232ea792bbe3f063c094c33d9806a5565cb31759e1ad39"
+  },
+  "id": "C3hLlOS4O6ZJtVFy",
+  "tags": []
+}

@@ -1,0 +1,531 @@
+{
+  "name": "Ultimate Personal Assistant (Upgraded)",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are the ultimate personal assistant — intelligent, organized, and proactive. Your job is to route the user's request to the correct tool(s). You never do the work yourself; you always delegate to the right agent.\n\n## Tools Available\n- **Think** — Use this to reason through complex situations before acting\n- **plannerAgent** — Use this FIRST for any multi-step or complex request before executing it\n- **emailAgent** — Email actions: send, draft, retrieve, reply, label, summarize, classify emails\n- **calendarAgent** — Calendar actions: create, read, update, delete events\n- **contactAgent** — Contact actions: look up, add, or update contacts\n- **contentCreator** — Create blog posts and articles\n- **researchAgent** — Deep research on any topic (use instead of Tavily for in-depth questions)\n- **decisionEngine** — Help the user decide something (should I attend, which is better, should I respond, etc.)\n- **Tavily** — Quick web search for simple facts or news\n\n## Routing Logic\n\n### Use plannerAgent FIRST when:\n- The request has 3 or more distinct actions\n- The request spans multiple agents (e.g. calendar + email + contacts)\n- The user asks to \"plan\", \"organize\", or \"set up\" something complex\n- Example: \"Plan my week and email my team\" → plannerAgent first, then execute each step\n\n### Use researchAgent when:\n- The user asks to \"research\", \"explain in depth\", \"compare\", or \"find out about\" a topic\n- The question requires synthesizing multiple sources\n- Example: \"Research the best productivity tools for executives\"\n\n### Use decisionEngine when:\n- The user asks \"should I...\", \"is this a good idea\", \"which option is better\"\n- The decision involves their schedule, emails, or commitments\n- Example: \"Should I attend the 3pm meeting tomorrow?\"\n\n### Use emailAgent when:\n- Sending, drafting, retrieving, replying to emails\n- Checking inbox, summarizing emails, classifying emails\n- Detecting follow-ups needed\n\n### Contact lookup rule (unchanged)\nFor the following actions, always look up contact info FIRST using contactAgent:\n- Sending emails\n- Drafting emails\n- Creating calendar events with attendees\n\n## Instructions\n1. Identify the type of request\n2. If complex and multi-step → call plannerAgent first to get a plan, then execute each step\n3. If a decision question → call decisionEngine\n4. If research needed → call researchAgent\n5. Otherwise → route directly to the correct agent(s)\n6. Use the **Think** tool to verify you took the right steps — call it every time\n\n## Examples\n\n**Example 1 — Multi-step (use planner)**\nInput: \"Plan my week, schedule workouts, and email my trainer.\"\n→ Call plannerAgent with the request\n→ Then execute: calendarAgent (check schedule) → calendarAgent (create workouts) → contactAgent (get trainer email) → emailAgent (send email)\n→ Output: Confirm all steps completed\n\n**Example 2 — Decision**\nInput: \"Should I attend the board meeting tomorrow?\"\n→ Call decisionEngine with the question\n→ Output: Pass through the recommendation\n\n**Example 3 — Research**\nInput: \"Research AI trends in healthcare for 2025\"\n→ Call researchAgent with the topic\n→ Output: Pass through the research report\n\n**Example 4 — Simple email (no planner needed)**\nInput: \"Send an email to Sarah asking if she's free Friday\"\n→ Call contactAgent to get Sarah's email\n→ Call emailAgent to send the email\n→ Output: Confirm email sent\n\n## Final Reminders\n- Current date/time: {{ $now }}\n- Never perform actions yourself — always delegate\n- For multi-step tasks, always plan before executing\n- Be concise in your final response to the user"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [80, 100],
+      "id": "upa-main-001",
+      "name": "Ultimate Assistant"
+    },
+    {
+      "parameters": {
+        "name": "emailAgent",
+        "description": "Call this tool for any email actions: send, draft, retrieve, reply, label, summarize, or classify emails. Also handles inbox summaries, follow-up detection, and reply suggestions.",
+        "workflowId": {
+          "__rl": true,
+          "value": "C3hLlOS4O6ZJtVFy",
+          "mode": "list",
+          "cachedResultName": "🤖Email Agent (Upgraded)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [-20, 640],
+      "id": "upa-email-001",
+      "name": "Email Agent"
+    },
+    {
+      "parameters": {
+        "name": "contactAgent",
+        "description": "Call this tool for any contact related actions: look up, add, or update contacts.",
+        "workflowId": {
+          "__rl": true,
+          "value": "IsSUyrla7wc1cDLE",
+          "mode": "list",
+          "cachedResultName": "🤖Contact Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [260, 640],
+      "id": "upa-contact-001",
+      "name": "Contact Agent"
+    },
+    {
+      "parameters": {
+        "name": "contentCreator",
+        "description": "Call this tool to create blog posts and articles.",
+        "workflowId": {
+          "__rl": true,
+          "value": "WWSu94V939ATcqvi",
+          "mode": "list",
+          "cachedResultName": "🤖Content Creator Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [400, 640],
+      "id": "upa-content-001",
+      "name": "Content Creator Agent"
+    },
+    {
+      "parameters": {
+        "name": "calendarAgent",
+        "description": "Call this tool for any calendar action: create, read, update, or delete events.",
+        "workflowId": {
+          "__rl": true,
+          "value": "0NtlJ41IozGhtFa6",
+          "mode": "list",
+          "cachedResultName": "🤖Calendar Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [120, 640],
+      "id": "upa-calendar-001",
+      "name": "Calendar Agent"
+    },
+    {
+      "parameters": {
+        "name": "plannerAgent",
+        "description": "Call this tool FIRST for any complex, multi-step request that involves 3 or more actions or multiple agents. It will break the request into an ordered plan. Use for requests involving planning, organizing, or setting up something across multiple domains.",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLNR1234567890AB",
+          "mode": "list",
+          "cachedResultName": "🤖Planner Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [-160, 640],
+      "id": "upa-planner-001",
+      "name": "Planner Agent"
+    },
+    {
+      "parameters": {
+        "name": "researchAgent",
+        "description": "Call this tool when the user wants to research a topic in depth, compare options, or understand something thoroughly. Runs multiple searches and synthesizes a comprehensive research report. Use instead of Tavily for deep research needs.",
+        "workflowId": {
+          "__rl": true,
+          "value": "RSRCH123456789AB",
+          "mode": "list",
+          "cachedResultName": "🤖Research Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [540, 640],
+      "id": "upa-research-001",
+      "name": "Research Agent"
+    },
+    {
+      "parameters": {
+        "name": "decisionEngine",
+        "description": "Call this tool when the user needs help making a decision. Use when they ask 'should I...', 'is this a good idea', 'which option is better', 'should I respond to this email', 'should I attend this meeting', etc. It checks their calendar and emails to give a smart recommendation.",
+        "workflowId": {
+          "__rl": true,
+          "value": "DCSE1234567890AB",
+          "mode": "list",
+          "cachedResultName": "🤖Decision Engine"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [680, 640],
+      "id": "upa-decision-001",
+      "name": "Decision Engine"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool for quick, simple web searches for facts or news. For deep research, use researchAgent instead.",
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n    \"api_key\": \"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\",\n    \"query\": \"{searchTerm}\",\n    \"search_depth\": \"basic\",\n    \"include_answer\": true,\n    \"topic\": \"news\",\n    \"include_raw_content\": true,\n    \"max_results\": 3\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "searchTerm",
+              "description": "What the user has requested to search the internet for",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [620, 380],
+      "id": "upa-tavily-001",
+      "name": "Tavily"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [760, 380],
+      "id": "upa-calc-001",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [640, 680],
+      "id": "upa-think-001",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [-720, 100],
+      "id": "upa-telegram-trigger-001",
+      "name": "Telegram Trigger",
+      "webhookId": "99eab1a0-569d-4f0f-a49e-578a02abfe63",
+      "credentials": {
+        "telegramApi": {
+          "id": "9jQWan3cOz3tE62s",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "upa-text-001",
+              "name": "text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-340, 120],
+      "id": "upa-settext-001",
+      "name": "Set 'Text'"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "voice-condition",
+                    "leftValue": "={{ $json.message.voice }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "text-condition",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [-580, 100],
+      "id": "upa-switch-001",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [500, 100],
+      "id": "upa-response-001",
+      "name": "Response",
+      "webhookId": "682ca5ab-d30c-4ea5-bb25-c2f26206e761",
+      "credentials": {
+        "telegramApi": {
+          "id": "9jQWan3cOz3tE62s",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [-80, 400],
+      "id": "upa-memory-001",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [-220, 400],
+      "id": "upa-llm-001",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "fpo6OUh9TcHg29jk",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# 🆕 UPGRADE SETUP GUIDE\n\n## New Workflows to Import\nImport these 3 new agent workflows into n8n:\n1. **🤖Planner Agent** — `__Planner_Agent.json`\n2. **🤖Research Agent** — `__Research_Agent.json`\n3. **🤖Decision Engine** — `__Decision_Engine.json`\n\n## Updated Workflow\n- Replace the old **Email Agent** with `__Email_Agent_Upgraded.json`\n- Replace the old **Ultimate Personal Assistant** with this file\n\n## After Importing\nFor each new agent workflow:\n1. Open it in n8n\n2. Copy its workflow ID from the URL bar\n3. Come back to this workflow\n4. Click the new tool node (Planner Agent, Research Agent, Decision Engine)\n5. Update the Workflow ID field with the correct ID\n\n## Credentials Needed\n- **Planner Agent** — OpenAI (gpt-4o)\n- **Research Agent** — Anthropic + Tavily API key (update in Tavily tool node)\n- **Decision Engine** — OpenAI + Google Calendar + Gmail\n- **Email Agent Upgraded** — OpenAI + Gmail (same as before)\n\n## Tavily API Key\nIn the Research Agent, update the Tavily tool node:\nReplace `your-api-key` with your actual Tavily API key.\n",
+        "height": 720,
+        "width": 620
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-1800, -120],
+      "id": "upa-setup-note-001",
+      "name": "Setup Guide"
+    },
+    {
+      "parameters": {
+        "content": "# Parent Agent\n## Upgraded with:\n- 🗓️ Planner Agent\n- 🔬 Research Agent\n- 🧠 Decision Engine\n- 📬 Smart Email Intelligence",
+        "height": 300,
+        "width": 440,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "upa-sticky-001",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# Children\n## Sub-Workflows\n",
+        "height": 200,
+        "width": 1060,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-260, 600],
+      "id": "upa-sticky-002",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# Think",
+        "height": 200,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [560, 600],
+      "id": "upa-sticky-003",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Email Agent": {
+      "ai_tool": [
+        [{"node": "Ultimate Assistant", "type": "ai_tool", "index": 0}]
+      ]
+    },
+    "Contact Agent": {
+      "ai_tool": [
+        [{"node": "Ultimate Assistant", "type": "ai_tool", "index": 0}]
+      ]
+    },
+    "Content Creator Agent": {
+      "ai_tool": [
+        [{"node": "Ultimate Assistant", "type": "ai_tool", "index": 0}]
+      ]
+    },
+    "Calendar Agent": {
+      "ai_tool": [
+        [{"node": "Ultimate Assistant", "type": "ai_tool", "index": 0}]
+      ]
+    },
+    "Planner Agent": {
+      "ai_tool": [
+        [{"node": "Ultimate Assistant", "type": "ai_tool", "index": 0}]
+      ]
+    },
+    "Research Agent": {
+      "ai_tool": [
+        [{"node": "Ultimate Assistant", "type": "ai_tool", "index": 0}]
+      ]
+    },
+    "Decision Engine": {
+      "ai_tool": [
+        [{"node": "Ultimate Assistant", "type": "ai_tool", "index": 0}]
+      ]
+    },
+    "Tavily": {
+      "ai_tool": [
+        [{"node": "Ultimate Assistant", "type": "ai_tool", "index": 0}]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [{"node": "Ultimate Assistant", "type": "ai_tool", "index": 0}]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [{"node": "Ultimate Assistant", "type": "ai_tool", "index": 0}]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [{"node": "Switch", "type": "main", "index": 0}]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [{"node": "Set 'Text'", "type": "main", "index": 0}],
+        [{"node": "Set 'Text'", "type": "main", "index": 0}]
+      ]
+    },
+    "Set 'Text'": {
+      "main": [
+        [{"node": "Ultimate Assistant", "type": "main", "index": 0}]
+      ]
+    },
+    "Ultimate Assistant": {
+      "main": [
+        [{"node": "Response", "type": "main", "index": 0}]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [{"node": "Ultimate Assistant", "type": "ai_memory", "index": 0}]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [{"node": "Ultimate Assistant", "type": "ai_languageModel", "index": 0}]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "wcOEdwvBT3k0Hc1i"
+  },
+  "versionId": "upa-upgraded-v1-2024",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "95e5a8c2e51c83e33b232ea792bbe3f063c094c33d9806a5565cb31759e1ad39"
+  },
+  "id": "hxansfVfjdDzDOHd",
+  "tags": []
+}

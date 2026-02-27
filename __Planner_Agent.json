@@ -1,0 +1,146 @@
+{
+  "name": "🤖Planner Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-240, -80],
+      "id": "planner-trigger-001",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [-140, 140],
+      "id": "planner-llm-001",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "BP9v81AwJlpYGStD",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "# Overview\nYou are a Planner Agent. Your ONLY job is to analyze a complex user request and break it into a structured, ordered list of steps. You do NOT execute any actions — you only create the plan.\n\n## Available Tools in the System\nThe following tools exist and can be used in your plan steps:\n- **calendarAgent** — create, read, update, or delete calendar events\n- **emailAgent** — send emails, draft emails, retrieve emails, reply to emails, label emails\n- **contactAgent** — look up, add, or update contacts\n- **contentCreator** — write blog posts or articles\n- **researchAgent** — research a topic in depth from the internet\n- **decisionEngine** — analyze a situation and return a recommendation\n- **Tavily** — quick web search for facts or news\n\n## Output Format\nAlways respond with a numbered plan in this exact format:\n\n**Plan for: [brief goal summary]**\n\nStep 1 — [Tool: toolName]\n[What this step does and why]\n\nStep 2 — [Tool: toolName]\n[What this step does and why]\n\n... (continue for all necessary steps)\n\n**Estimated steps:** [number]\n**Notes:** [Any important caveats, assumptions, or things to watch out for]\n\n## Rules\n- Be specific about which tool handles each step\n- Order steps logically (e.g. always look up a contact before emailing them)\n- If a step requires output from a previous step, mention that dependency\n- Keep each step description to 1–2 sentences\n- Do not make up tools that don't exist in the list above\n- If the request is simple and needs only one tool, still provide a one-step plan\n\n## Example\nUser request: \"Plan my week, schedule workouts, and email my trainer.\"\n\n**Plan for: Weekly planning with workout scheduling and trainer notification**\n\nStep 1 — [Tool: calendarAgent]\nRetrieve this week's existing calendar events to identify free time slots.\n\nStep 2 — [Tool: calendarAgent]\nCreate workout sessions in the available time slots throughout the week.\n\nStep 3 — [Tool: contactAgent]\nLook up the trainer's email address from the contacts database.\n\nStep 4 — [Tool: emailAgent]\nSend the trainer an email with the finalized workout schedule.\n\n**Estimated steps:** 4\n**Notes:** Assumes trainer is already saved as a contact. Workout duration defaults to 1 hour unless specified."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [-20, -80],
+      "id": "planner-agent-001",
+      "name": "Planner Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "planner-resp-001",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [500, -160],
+      "id": "planner-success-001",
+      "name": "Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "planner-err-001",
+              "name": "response",
+              "value": "An error occurred while creating the plan. Please try again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [500, 20],
+      "id": "planner-error-001",
+      "name": "Try Again"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Planner Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Planner Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Planner Agent": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Try Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "planner-v1-2024",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "95e5a8c2e51c83e33b232ea792bbe3f063c094c33d9806a5565cb31759e1ad39"
+  },
+  "id": "PLNR1234567890AB",
+  "tags": []
+}
